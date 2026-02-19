@@ -3,6 +3,7 @@
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="theme-color" content="#020409" />
 		<title>Production Gate</title>
 		<style>
 			:root {
@@ -21,13 +22,18 @@
 				box-sizing: border-box;
 			}
 
+			html {
+				height: 100%;
+				background: #020409;
+			}
+
 			body {
 				margin: 0;
-				min-height: 100vh;
+				min-height: 100svh;
 				display: flex;
 				justify-content: center;
 				align-items: flex-start;
-				padding: 6vh 0 8vh;
+				padding: max(4vh, env(safe-area-inset-top)) 0 max(6vh, env(safe-area-inset-bottom));
 				color: var(--text);
 				background: radial-gradient(1200px 600px at 50% -10%, #0b1f1a 0%, transparent 60%),
 					linear-gradient(180deg, #020409, #010308 70%);
@@ -71,11 +77,8 @@
 			}
 
 			.top-block {
-				height: 230px;
-				display: grid;
-				grid-template-rows: calc(1.6em * 3) 48px 1.6em 1.6em;
-				row-gap: 0.7rem;
-				align-content: start;
+				min-height: 230px;
+				display: block;
 			}
 
 			.title {
@@ -146,6 +149,7 @@
 				display: inline-block;
 				visibility: hidden;
 				align-self: start;
+				margin-bottom: 0.7rem;
 			}
 
 			.hint-button.visible {
@@ -304,6 +308,47 @@
 				}
 			}
 
+			@media (max-width: 599px) {
+				.terminal-body {
+					padding: 1.4rem 1rem 1.8rem;
+					min-height: 0;
+				}
+
+				.top-block {
+					min-height: 270px;
+				}
+
+				.log,
+				.title,
+				.hint,
+				.message,
+				button,
+				input[type="text"],
+				label,
+				.code,
+				.followup-text {
+					font-size: 0.95rem;
+				}
+
+				.log {
+					min-height: calc(1.6em * 4);
+				}
+
+				.hint {
+					min-height: calc(1.6em * 2);
+				}
+
+				.hint-button,
+				.form button,
+				.initials-form button {
+					width: 100%;
+				}
+
+				.form {
+					gap: 0.8rem;
+				}
+			}
+
 			@keyframes scan {
 				0% {
 					transform: translateY(-10%);
@@ -374,7 +419,7 @@
 							id="passcode"
 							name="passcode"
 							type="text"
-							inputmode="numeric"
+							maxlength="10"
 							placeholder="DD/MM/YYYY"
 							aria-describedby="message"
 						/>
@@ -551,6 +596,23 @@
 
 			initialOne.addEventListener("input", checkInitials);
 			initialTwo.addEventListener("input", checkInitials);
+
+			passcodeInput.addEventListener("input", () => {
+				const digits = passcodeInput.value.replace(/\D/g, "").slice(0, 8);
+				const day = digits.slice(0, 2);
+				const month = digits.slice(2, 4);
+				const year = digits.slice(4, 8);
+
+				let formatted = day;
+				if (month) {
+					formatted += `/${month}`;
+				}
+				if (year) {
+					formatted += `/${year}`;
+				}
+
+				passcodeInput.value = formatted;
+			});
 		</script>
 	</body>
 </html>
