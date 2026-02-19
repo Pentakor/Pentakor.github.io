@@ -1,1 +1,556 @@
-# Pentakor.github.io
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Production Gate</title>
+		<style>
+			:root {
+				--bg: #020409;
+				--grid: rgba(45, 212, 191, 0.12);
+				--scan: rgba(15, 23, 42, 0.35);
+				--panel: rgba(3, 8, 16, 0.82);
+				--panel-border: rgba(45, 212, 191, 0.4);
+				--text: #a7f3d0;
+				--muted: #6ee7b7;
+				--accent: #22d3ee;
+				--danger: #fca5a5;
+			}
+
+			* {
+				box-sizing: border-box;
+			}
+
+			body {
+				margin: 0;
+				min-height: 100vh;
+				display: flex;
+				justify-content: center;
+				align-items: flex-start;
+				padding: 6vh 0 8vh;
+				color: var(--text);
+				background: radial-gradient(1200px 600px at 50% -10%, #0b1f1a 0%, transparent 60%),
+					linear-gradient(180deg, #020409, #010308 70%);
+				font-family: "Courier New", Courier, monospace;
+				text-shadow: 0 0 8px rgba(34, 211, 238, 0.25);
+				overflow-y: auto;
+			}
+
+			body::before,
+			body::after {
+				content: "";
+				position: fixed;
+				inset: 0;
+				pointer-events: none;
+			}
+
+			body::before {
+				background-image: linear-gradient(var(--scan) 1px, transparent 1px);
+				background-size: 100% 5px;
+				mix-blend-mode: screen;
+				opacity: 0.35;
+				animation: scan 10s linear infinite;
+			}
+
+			body::after {
+				background-image:
+					linear-gradient(transparent 0, rgba(34, 211, 238, 0.08) 1px, transparent 2px),
+					linear-gradient(90deg, transparent 0, rgba(34, 211, 238, 0.08) 1px, transparent 2px);
+				background-size: 60px 60px;
+				opacity: 0.25;
+			}
+
+			.terminal-body {
+				width: min(92vw, 720px);
+				padding: 2rem 2.2rem 2.4rem;
+				min-height: 520px;
+				font-size: 1rem;
+				color: var(--text);
+				animation: panelGlow 6s ease-in-out infinite;
+				min-height: 520px;
+			}
+
+			.top-block {
+				height: 230px;
+				display: grid;
+				grid-template-rows: calc(1.6em * 3) 48px 1.6em 1.6em;
+				row-gap: 0.7rem;
+				align-content: start;
+			}
+
+			.title {
+				margin: 0;
+				font-size: inherit;
+				letter-spacing: normal;
+				text-transform: none;
+				line-height: 1.6;
+				min-height: 1.6em;
+			}
+
+			.hint {
+				margin: 0;
+				color: inherit;
+				font-size: inherit;
+				text-transform: none;
+				letter-spacing: normal;
+				line-height: 1.6;
+				min-height: 1.6em;
+			}
+
+			.log {
+				margin: 0;
+				font-size: inherit;
+				color: inherit;
+				line-height: 1.6;
+				text-transform: none;
+				letter-spacing: normal;
+				min-height: calc(1.6em * 3);
+			}
+
+			.log-line {
+				position: relative;
+				animation: fadeUp 0.5s ease both;
+			}
+
+			.log-line.typing::after {
+				content: "_";
+				margin-left: 0.35rem;
+				opacity: 1;
+				animation: blink 0.9s steps(2) infinite;
+			}
+
+			.text-typing::after {
+				content: "_";
+				margin-left: 0.35rem;
+				opacity: 1;
+				animation: blink 0.9s steps(2) infinite;
+			}
+
+			.form {
+				display: grid;
+				gap: 1rem;
+				grid-template-columns: 1fr;
+				margin-top: 0.35rem;
+				opacity: 0;
+				pointer-events: none;
+				transition: opacity 0.4s ease;
+			}
+
+			.form.visible {
+				opacity: 1;
+				pointer-events: auto;
+			}
+
+			.hint-button {
+				margin: 0;
+				display: inline-block;
+				visibility: hidden;
+				align-self: start;
+			}
+
+			.hint-button.visible {
+				visibility: visible;
+			}
+
+			.field {
+				display: grid;
+				gap: 0.5rem;
+			}
+
+			label {
+				font-size: inherit;
+				color: inherit;
+				text-transform: none;
+				letter-spacing: normal;
+			}
+
+			input[type="text"] {
+				width: 100%;
+				padding: 0.85rem 1rem;
+				border-radius: 8px;
+				border: 1px solid rgba(34, 211, 238, 0.4);
+				background: rgba(2, 10, 12, 0.9);
+				color: var(--text);
+				font-size: 1rem;
+				outline: none;
+				transition: border-color 0.25s ease, box-shadow 0.25s ease;
+			}
+
+			input[type="text"]:focus {
+				border-color: var(--accent);
+				box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.35), 0 0 12px rgba(34, 211, 238, 0.4);
+			}
+
+			button {
+				padding: 0.85rem 1.2rem;
+				border-radius: 8px;
+				border: 1px solid rgba(34, 211, 238, 0.5);
+				background: rgba(7, 32, 38, 0.9);
+				color: var(--text);
+				font-weight: normal;
+				font-size: inherit;
+				cursor: pointer;
+				text-transform: none;
+				letter-spacing: normal;
+				transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+			}
+
+			button:hover {
+				transform: translateY(-1px);
+				background: rgba(13, 56, 64, 0.9);
+				box-shadow: 0 0 20px rgba(34, 211, 238, 0.35);
+			}
+
+			button:focus-visible {
+				outline: none;
+				box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.6), 0 0 14px rgba(34, 211, 238, 0.4);
+			}
+
+			.message {
+				min-height: 1.2rem;
+				font-size: inherit;
+				color: inherit;
+				text-transform: none;
+				letter-spacing: normal;
+				margin-top: 0.4rem;
+			}
+
+			.code {
+				margin-top: 1.5rem;
+				padding: 1rem 1.2rem;
+				border-radius: 10px;
+				border: 1px solid rgba(34, 211, 238, 0.5);
+				background: rgba(2, 10, 12, 0.9);
+				font-size: inherit;
+				text-align: center;
+				letter-spacing: normal;
+				display: none;
+				word-wrap: break-word;
+				text-transform: none;
+				box-shadow: inset 0 0 20px rgba(34, 211, 238, 0.2);
+			}
+
+			.code.visible {
+				display: block;
+				opacity: 1;
+				color: var(--text);
+				animation: fadeUp 0.6s ease both;
+			}
+
+			.followup {
+				margin-top: 1rem;
+				opacity: 0;
+				pointer-events: none;
+				transition: opacity 0.4s ease;
+			}
+
+			.followup.visible {
+				opacity: 1;
+				pointer-events: auto;
+			}
+
+			.followup-text {
+				margin: 0 0 0.8rem;
+				min-height: 1.4rem;
+			}
+
+			.initials-form {
+				display: grid;
+				gap: 1rem;
+				grid-template-columns: 1fr;
+				opacity: 0;
+				pointer-events: none;
+				transition: opacity 0.4s ease;
+			}
+
+			.initials-form.visible {
+				opacity: 1;
+				pointer-events: auto;
+			}
+
+			.initials-fields {
+				display: grid;
+				gap: 1rem;
+				grid-template-columns: repeat(2, minmax(0, 1fr));
+			}
+
+			.icon {
+				margin-top: 0.8rem;
+				display: none;
+				align-items: center;
+				gap: 0.6rem;
+			}
+
+			.icon.visible {
+				display: flex;
+			}
+
+			.icon svg {
+				width: 22px;
+				height: 22px;
+				stroke: currentColor;
+				fill: none;
+				stroke-width: 1.6;
+			}
+
+			@media (min-width: 600px) {
+				.form {
+					grid-template-columns: 1fr auto;
+					align-items: end;
+				}
+
+				button {
+					height: 48px;
+				}
+			}
+
+			@keyframes scan {
+				0% {
+					transform: translateY(-10%);
+				}
+				100% {
+					transform: translateY(10%);
+				}
+			}
+
+			@keyframes flicker {
+				0%,
+				100% {
+					opacity: 1;
+				}
+				45% {
+					opacity: 0.985;
+				}
+				65% {
+					opacity: 0.99;
+				}
+			}
+
+			@keyframes blink {
+				0%,
+				100% {
+					opacity: 0.2;
+				}
+				50% {
+					opacity: 1;
+				}
+			}
+
+			@keyframes fadeUp {
+				0% {
+					opacity: 0;
+					transform: translateY(6px);
+				}
+				100% {
+					opacity: 1;
+					transform: translateY(0);
+				}
+			}
+
+			@keyframes panelGlow {
+				0%,
+				100% {
+					text-shadow: 0 0 8px rgba(34, 211, 238, 0.22);
+				}
+				50% {
+					text-shadow: 0 0 12px rgba(34, 211, 238, 0.35);
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<main class="terminal-body">
+				<div class="top-block">
+					<div class="log" id="systemLog" aria-live="polite"></div>
+					<button class="hint-button" id="showHintButton" type="button">Show hint</button>
+					<h1 class="title" id="titleText" aria-live="polite"></h1>
+					<p class="hint" id="hintText" aria-live="polite"></p>
+				</div>
+
+				<form class="form" id="gateForm" autocomplete="off">
+					<div class="field">
+						<label for="passcode">Passcode</label>
+						<input
+							id="passcode"
+							name="passcode"
+							type="text"
+							inputmode="numeric"
+							placeholder="DD/MM/YYYY"
+							aria-describedby="message"
+						/>
+					</div>
+					<button type="submit">Unlock</button>
+				</form>
+
+				<div class="message" id="message" role="status" aria-live="polite"></div>
+				<div class="code" id="binaryCode"></div>
+				<div class="followup" id="followupSection">
+					<p class="followup-text" id="followupText" aria-live="polite"></p>
+					<form class="initials-form" id="initialsForm" autocomplete="off">
+						<div class="field">
+							<label for="initialOne">First initial</label>
+							<div class="initials-fields">
+								<input id="initialOne" name="initialOne" type="text" maxlength="1" />
+								<input id="initialTwo" name="initialTwo" type="text" maxlength="1" />
+							</div>
+						</div>
+					</form>
+					<div class="icon" id="phoneIcon" aria-live="polite">
+						<svg viewBox="0 0 24 24" aria-hidden="true">
+							<path d="M5 3h3l2 5-2 1c1 2 3 4 5 5l1-2 5 2v3c0 1-1 2-2 2-7 0-13-6-13-13 0-1 1-2 2-2z" />
+						</svg>
+						<span>Line ready</span>
+					</div>
+				</div>
+		</main>
+
+		<script>
+			const form = document.getElementById("gateForm");
+			const passcodeInput = document.getElementById("passcode");
+			const message = document.getElementById("message");
+			const binaryCode = document.getElementById("binaryCode");
+			const systemLog = document.getElementById("systemLog");
+			const showHintButton = document.getElementById("showHintButton");
+			const titleText = document.getElementById("titleText");
+			const hintText = document.getElementById("hintText");
+			const followupSection = document.getElementById("followupSection");
+			const followupText = document.getElementById("followupText");
+			const initialsForm = document.getElementById("initialsForm");
+			const initialOne = document.getElementById("initialOne");
+			const initialTwo = document.getElementById("initialTwo");
+			const phoneIcon = document.getElementById("phoneIcon");
+
+			const requiredCode = "20/02/2001";
+			const logLines = [
+				"Boot sequence... OK",
+				"Encryption matrix synced",
+				"Awaiting operator credentials",
+			];
+			const typingSpeed = 60;
+			const lineDelay = 700;
+			const textSpeed = 55;
+			const binarySpeed = 85;
+			const titleLine = "your Production date";
+			const hintLine = "Enter the passcode exactly as shown in the required format.";
+			const binaryLine = "0000 0011 0110 0111 0001 1001 0100 0011 0011";
+			const followupLine = "For another hint add your initials.";
+			const requiredInitialOne = "K";
+			const requiredInitialTwo = "B";
+
+			const typeLine = (line, done) => {
+				const lineEl = document.createElement("div");
+				lineEl.className = "log-line typing";
+				systemLog.appendChild(lineEl);
+				let index = 0;
+
+				const timer = setInterval(() => {
+					index += 1;
+					lineEl.textContent = `> ${line.slice(0, index)}`;
+					if (index >= line.length) {
+						clearInterval(timer);
+						lineEl.textContent = `> ${line}`;
+						lineEl.classList.remove("typing");
+						done();
+					}
+				}, typingSpeed);
+			};
+
+			const typeText = (element, text, done) => {
+				element.classList.add("text-typing");
+				let index = 0;
+				const timer = setInterval(() => {
+					index += 1;
+					element.textContent = text.slice(0, index);
+					if (index >= text.length) {
+						clearInterval(timer);
+						element.classList.remove("text-typing");
+						done();
+					}
+				}, textSpeed);
+			};
+
+			const typeBinary = (element, text, done) => {
+				element.classList.add("text-typing");
+				let index = 0;
+				const timer = setInterval(() => {
+					index += 1;
+					element.textContent = text.slice(0, index);
+					if (index >= text.length) {
+						clearInterval(timer);
+						element.classList.remove("text-typing");
+						done();
+					}
+				}, binarySpeed);
+			};
+
+			const resetFollowup = () => {
+				followupText.textContent = "";
+				followupSection.classList.remove("visible");
+				initialsForm.classList.remove("visible");
+				initialOne.value = "";
+				initialTwo.value = "";
+				phoneIcon.classList.remove("visible");
+			};
+
+			const playLog = (index = 0) => {
+				if (index >= logLines.length) {
+					showHintButton.classList.add("visible");
+					showHintButton.focus();
+					form.classList.add("visible");
+					return;
+				}
+				typeLine(logLines[index], () => {
+					setTimeout(() => playLog(index + 1), lineDelay);
+				});
+			};
+
+			playLog();
+
+			showHintButton.addEventListener("click", () => {
+				showHintButton.disabled = true;
+				typeText(titleText, titleLine, () => {
+					typeText(hintText, hintLine, () => {
+						form.classList.add("visible");
+					});
+				});
+			});
+
+			form.addEventListener("submit", (event) => {
+				event.preventDefault();
+				const value = passcodeInput.value.trim();
+
+				if (value === requiredCode) {
+					binaryCode.classList.add("visible");
+					binaryCode.textContent = "";
+					message.textContent = "Access granted.";
+					message.style.color = "#a7f3d0";
+					typeBinary(binaryCode, binaryLine, () => {
+						followupSection.classList.add("visible");
+						typeText(followupText, followupLine, () => {
+							initialsForm.classList.add("visible");
+						});
+					});
+				} else {
+					binaryCode.classList.remove("visible");
+					binaryCode.textContent = "";
+					message.textContent = "Incorrect passcode. Try again.";
+					message.style.color = "#fca5a5";
+					resetFollowup();
+				}
+			});
+
+			const checkInitials = () => {
+				const first = initialOne.value.trim().toUpperCase();
+				const second = initialTwo.value.trim().toUpperCase();
+				if (first === requiredInitialOne && second === requiredInitialTwo) {
+					phoneIcon.classList.add("visible");
+				} else {
+					phoneIcon.classList.remove("visible");
+				}
+			};
+
+			initialOne.addEventListener("input", checkInitials);
+			initialTwo.addEventListener("input", checkInitials);
+		</script>
+	</body>
+</html>
